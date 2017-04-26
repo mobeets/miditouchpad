@@ -9,7 +9,17 @@ class TouchPad:
         self.n_fingers = n_fingers
         self.timestamp = timestamp
 
-class MidiNote:
+class MidiEvent:
+    def __init__(self):
+        self.is_done = False
+
+    def update(self, new_events):
+        """
+        new_events is a list of MidiEvents being added on this cycle
+        """
+        raise NotImplementedError
+
+class MidiNote(MidiEvent):
     def __init__(self, note, velocity=127, channel=0, max_duration=1000):
         self.note = note
         self.velocity = velocity
@@ -77,6 +87,7 @@ class MidiPad:
         new_events = []
         for event in events:
             if not isinstance(event, MidiNote):
+                new_events.append(event)
                 continue
             if not any([e for e in self.events if event.is_same_note(e)]):
                 msgs.append(event.update([]))
@@ -94,10 +105,7 @@ class MidiPad:
             self.outport.send(msg)
 
     def touch_events(self, touch):
-        # maps pos in (0,1) to note in (21, 109)
-        pos_to_note = lambda pos: int(self.offset + self.nkeys*pos)
-        notes = [pos_to_note(x) for (x,y) in touch.positions]
-        return [MidiNote(n) for n in notes]
+        raise NotImplementedError
         
     def update(self, touch):
         if self.paused(touch):
@@ -114,3 +122,11 @@ class MidiPad:
         if len(touch.positions) == self.n_fingers_to_pause:
             self.got_pause_touch = not self.got_pause_touch
         return self.got_pause_touch
+
+class DefaultMidiPad(MidiPad):
+    def touch_events(self, touch):
+        # maps pos in (0,1) to note in (21, 109)
+        pos_to_note = lambda pos: int(21 + 88*pos)
+        notes = [pos_to_note(x) for (x,y) in touch.positions]
+        print notes
+        return [MidiNote(n) for n in notes]
