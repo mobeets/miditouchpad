@@ -75,9 +75,22 @@ def get_position(data):
 def get_positions(data_ptr, n_fingers):
     return [get_position(data_ptr[i]) for i in xrange(n_fingers)]
 
+def get_ellipse(data):
+    return (data.angle, data.major_axis, data.minor_axis)
+
+def get_ellipses(data_ptr, n_fingers):
+    return [get_ellipse(data_ptr[i]) for i in xrange(n_fingers)]
+
+class TouchPad:
+    def __init__(self, data, n_fingers, timestamp):
+        self.n_fingers = n_fingers
+        self.positions = get_positions(data, n_fingers)
+        self.ellipses = get_ellipses(data, n_fingers)
+        self.timestamp = timestamp
+
 def inner_callback(device, data_ptr, n_fingers, timestamp, frame, callback):
-    pts = get_positions(data_ptr, n_fingers)
-    callback(pts, timestamp)
+    touch = TouchPad(data_ptr, n_fingers, timestamp)
+    callback(touch)
     return 0
 
 def bind_callback(callback):
