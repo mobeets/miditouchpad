@@ -3,11 +3,19 @@ import time
 import mido
 import threading
 from multitouch import start_devices_with_callback, bind_callback
-from midipad import MidiPad
+from midipad import MidiPad, MidiNote
 
-def main():
-    with mido.open_output('MidiPad-Port', virtual=True) as outport:
-        M = MidiPad(outport)
+class DefaultMidiPad(MidiPad):
+    def touch_events(self, touch):
+        # maps pos in (0,1) to note in (21, 109)
+        pos_to_note = lambda pos: int(21 + 88*pos)
+        notes = [pos_to_note(x) for (x,y) in touch.positions]
+        print notes
+        return [MidiNote(n) for n in notes]
+
+def main(port_name='MidiPad-Port'):
+    with mido.open_output(port_name, virtual=True) as outport:
+        M = DefaultMidiPad(outport)
         fcn = bind_callback(M.update)
         start_devices_with_callback(fcn)
         while threading.active_count():

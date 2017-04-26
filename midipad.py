@@ -94,9 +94,9 @@ class MidiPad:
             self.outport.send(msg)
 
     def touch_events(self, touch):
+        # maps pos in (0,1) to note in (21, 109)
         pos_to_note = lambda pos: int(self.offset + self.nkeys*pos)
         notes = [pos_to_note(x) for (x,y) in touch.positions]
-        print notes
         return [MidiNote(n) for n in notes]
         
     def update(self, touch):
