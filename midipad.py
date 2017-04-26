@@ -2,8 +2,15 @@ import time
 import mido
 import numpy as np
 
+class TouchPad:
+    def __init__(self, positions, ellipses, n_fingers, timestamp):
+        self.positions = positions
+        self.ellipses = ellipses
+        self.n_fingers = n_fingers
+        self.timestamp = timestamp
+
 class MidiNote:
-    def __init__(self, note, velocity=127, channel=0, max_duration=1000, verbose=True):
+    def __init__(self, note, velocity=127, channel=0, max_duration=1000):
         self.note = note
         self.velocity = velocity
         self.channel = channel
@@ -60,9 +67,6 @@ class MidiPad:
         self.offset = offset
         self.latency = latency
         self.events = []
-        self.notes_on = np.zeros(nkeys+1,)
-        self.notes_dur = np.zeros(nkeys+1,)
-        self.max_note_duration = 1000
         self.last_touch = None
         self.got_pause_touch = False
         self.n_fingers_to_pause = n_fingers_to_pause

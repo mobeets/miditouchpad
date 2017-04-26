@@ -3,6 +3,7 @@ source: http://blog.sendapatch.se/2009/november/macbook-multitouch-in-python.htm
 """
 import ctypes
 from ctypes.util import find_library
+from midipad import TouchPad
 
 CFArrayRef = ctypes.c_void_p
 CFMutableArrayRef = ctypes.c_void_p
@@ -81,15 +82,10 @@ def get_ellipse(data):
 def get_ellipses(data_ptr, n_fingers):
     return [get_ellipse(data_ptr[i]) for i in xrange(n_fingers)]
 
-class TouchPad:
-    def __init__(self, data, n_fingers, timestamp):
-        self.n_fingers = n_fingers
-        self.positions = get_positions(data, n_fingers)
-        self.ellipses = get_ellipses(data, n_fingers)
-        self.timestamp = timestamp
-
 def inner_callback(device, data_ptr, n_fingers, timestamp, frame, callback):
-    touch = TouchPad(data_ptr, n_fingers, timestamp)
+    positions = get_positions(data_ptr, n_fingers)
+    ellipses = get_ellipses(data_ptr, n_fingers)
+    touch = TouchPad(positions, ellipses, n_fingers, timestamp)
     callback(touch)
     return 0
 
