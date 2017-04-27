@@ -7,6 +7,6 @@
 
 ## Options
 
-Play notes in D major: `python play.py --notes D`
-Play notes in F# minor: `python play.py --notes f#`
-Change the latency: `python play.py --latency 0.3`
+- Play notes in D major: `python play.py --notes D`
+- Play notes in F# minor: `python play.py --notes f#`
+- Change the latency: `python play.py --latency 0.3`
