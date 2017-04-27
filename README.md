@@ -9,5 +9,5 @@
 
 - Play notes in D major: `python play.py --notes D`
 - Play notes in F# minor: `python play.py --notes f#`
-- Change which octaves are included: `python play.py --octaves 4
+- Change which octaves are included: `python play.py --octaves 4`
 - Change the latency: `python play.py --latency 0.3`
