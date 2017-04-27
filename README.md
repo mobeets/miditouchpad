@@ -1,7 +1,8 @@
 
-Idea: play trackpad as a midi instrument
+To do:
 
-- use `multitouch.py` to read trackpad position
-- use `keras` model to convert trackpad position to midi notes
-- use `midi2audio` or `python-midi` to create a midistream
-- should be able to record this as a midi instrument in Logic, e.g.
+- function for discretizing to say, Cmaj
+- map vel in default pad
+- write some instructions for installation and usage
+- pip package
+- add to jehosafet

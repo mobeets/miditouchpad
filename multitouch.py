@@ -1,4 +1,6 @@
 """
+Reads touch events from a Mac touchpad
+
 source: http://blog.sendapatch.se/2009/november/macbook-multitouch-in-python.html
 """
 import ctypes

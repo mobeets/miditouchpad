@@ -3,6 +3,11 @@ import mido
 import numpy as np
 
 class TouchPad:
+    """
+    Basic container for touch events
+        positions: finger touch locations
+        ellipses: finger touch ellipses
+    """
     def __init__(self, positions, ellipses, n_fingers, timestamp):
         self.positions = positions
         self.ellipses = ellipses
@@ -10,19 +15,29 @@ class TouchPad:
         self.timestamp = timestamp
 
 class MidiEvent:
+    """
+    Any midi event you want MidiPad to add must define at minimum an update function
+    """
     def __init__(self):
         self.is_done = False
 
     def update(self, new_events):
         """
         new_events is a list of MidiEvents being added on this cycle
+
+        returns a mido.Message, or anything that can be added to a mido outport using outport.send(msg)
         """
         raise NotImplementedError
 
 class MidiNote(MidiEvent):
-    def __init__(self, note, velocity=127, channel=0, max_duration=1000):
+    """
+    MidiNote
+    """
+    def __init__(self, note, velocity=127, identifier=None, channel=0, max_duration=1000, threshold=np.inf):
         self.note = note
         self.velocity = velocity
+        self.identifier = identifier
+        self.threshold = threshold # try 1.58
         self.channel = channel
         self.timestamp = time.time()
         self.max_duration = max_duration
@@ -31,6 +46,11 @@ class MidiNote(MidiEvent):
         self.is_done = False
 
     def update(self, new_events):
+        """
+        This gets called every time MidiPad.update_events() is called
+
+        This MidiNote will play for the duration that a touch triggers a MidiNote event passing self.is_same_note()
+        """
         if not self.has_been_played:
             msg = self.play()
         elif any([e for e in new_events if self.is_same_note(e)]):
@@ -62,7 +82,9 @@ class MidiNote(MidiEvent):
         return None
 
     def is_same_note(self, event):
-        return isinstance(event, MidiNote) and event.note == self.note and event.channel == self.channel
+        if not isinstance(event, MidiNote) or not hasattr(event, 'identifier') or event.channel != self.channel:
+            return False
+        return event.note == self.note and event.identifier < self.threshold
 
     def __str__(self):
         return "MidiNote(note={}, vel={}, channel={})".format(self.note, self.velocity, self.channel)
@@ -71,17 +93,27 @@ class MidiNote(MidiEvent):
         return self.__str__()
 
 class MidiPad:
-    def __init__(self, outport, nkeys=88, offset=21, latency=0.1, n_fingers_to_pause=5):
-        self.outport = outport
-        self.nkeys = nkeys
-        self.offset = offset
+    """
+    MidiPad
+    """
+    def __init__(self, outport, latency=0.1, n_fingers_to_pause=5):
+        self.outport = outport # mido port for sending midi messages
+        self.last_touch = None # store last touch event
         self.latency = latency
         self.events = []
-        self.last_touch = None
+
+        # by default, a touch event involving five fingers prevents calls to self.update_events()
         self.got_pause_touch = False
         self.n_fingers_to_pause = n_fingers_to_pause
 
     def update_events(self, events):
+        """
+        checks for matches with existing MidiNote objects
+            then updates all events
+            and sends events to the outport
+
+        events is a list of MidiEvent objects
+        """
         # add any note event that isn't already playing
         msgs = []
         new_events = []
@@ -105,9 +137,19 @@ class MidiPad:
             self.outport.send(msg)
 
     def touch_events(self, touch):
+        """
+        touch is a TouchPad object with most recent touch event
+        returns a list of MidiEvent objects
+        """
         raise NotImplementedError
         
     def update(self, touch):
+        """
+        every time a touch event is triggered, this gets called
+            only calls self.update_events() if duration given by latency has passed since last touch event
+        
+        touch is a TouchPad object
+        """
         if self.paused(touch):
             return
         if self.last_touch is None or touch.timestamp - self.last_touch.timestamp > self.latency:
@@ -117,16 +159,50 @@ class MidiPad:
 
     def paused(self, touch):
         """
-        if enough fingers are touching, pause note updates
+        if enough fingers are touching, pause calls to self.update_events()
+
+        touch is a TouchPad object
         """
         if len(touch.positions) == self.n_fingers_to_pause:
             self.got_pause_touch = not self.got_pause_touch
         return self.got_pause_touch
 
+def discretize(pos, vals):
+    """
+    maps pos in (0,1) to val in vals
+        e.g. discretize(0.1, xrange(21, 109))
+        maps the position 0.1 to a pitch on 88-key keyboard
+
+    pos is float in (0,1)
+    vals is list of values
+    """
+    ind = np.digitize([pos*len(vals)+1 - 1.0], xrange(len(vals)))[0]
+    return vals[ind-1]
+
 class DefaultMidiPad(MidiPad):
     def touch_events(self, touch):
-        # maps pos in (0,1) to note in (21, 109)
-        pos_to_note = lambda pos: int(21 + 88*pos)
-        notes = [pos_to_note(x) for (x,y) in touch.positions]
-        print notes
-        return [MidiNote(n) for n in notes]
+        """
+        maps x position to pitch, y position to velocity
+        """
+        events = [MidiNote(note=discretize(x, xrange(21, 109)),
+                        velocity=discretize(y, xrange(0, 128)))
+                            for (x,y) in touch.positions]
+        print events
+        return events
+
+all_notes = xrange(21, 109)
+Cmaj = [60, 62, 64, 65, 67, 69, 71, 72]
+
+class DefaultMidiPad(MidiPad):
+    def touch_events(self, touch, note_opts=all_notes):
+        """
+        maps x position to pitch, y position to velocity
+        """
+        events = []
+        for (x,y),(a,b,c) in zip(touch.positions, touch.ellipses):
+            event = MidiNote(note=discretize(x, note_opts),
+                        velocity=discretize(y, xrange(0, 128)),
+                        identifier=a)
+            events.append(event)
+        print events
+        return events

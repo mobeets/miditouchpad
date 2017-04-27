@@ -5,9 +5,14 @@ import threading
 from multitouch import start_devices_with_callback, bind_callback
 from midipad import DefaultMidiPad
 
-def play(port_name='MidiPad-Port'):
+def play(PadClass=DefaultMidiPad, port_name='MidiPad-Port'):
+    """
+    Opens a virtual midi port
+        and calls M.update() whenever touch events are received
+        where M is a MidiPad object
+    """
     with mido.open_output(port_name, virtual=True) as outport:
-        M = DefaultMidiPad(outport)
+        M = PadClass(outport)
         fcn = bind_callback(M.update)
         start_devices_with_callback(fcn)
         while threading.active_count():
