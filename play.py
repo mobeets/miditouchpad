@@ -4,7 +4,7 @@ import mido
 import argparse
 import threading
 from multitouch import start_devices_with_callback, bind_callback
-from midipad import DefaultMidiPad, all_key_opts
+from custom import DefaultMidiPad, all_key_opts
 
 def play(args, PadClass=DefaultMidiPad, port_name='MidiPad-Port'):
     """
@@ -15,6 +15,7 @@ def play(args, PadClass=DefaultMidiPad, port_name='MidiPad-Port'):
     with mido.open_output(port_name, virtual=True) as outport:
         M = PadClass(outport,
             latency=args.latency,
+            octaves=args.octaves,
             notes=args.notes)
         fcn = bind_callback(M.update)
         start_devices_with_callback(fcn)
@@ -25,6 +26,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--latency', type=float, default=0.1,
         help='how often to check for note updates (in secs)')
+    parser.add_argument('--octaves', type=int, nargs='+', default=range(1,8),
+        help='octaves to include; list of ints in 1..7')
     parser.add_argument('--notes', type=str, default='all',
         choices=['all'] + all_key_opts,
         help='choose key name (lowercase is minor), or "all"')
