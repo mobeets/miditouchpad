@@ -13,7 +13,8 @@ def play(args, PadClass=DefaultMidiPad, port_name='MidiPad-Port'):
         where M is a MidiPad object
     """
     with mido.open_output(port_name, virtual=True) as outport:
-        M = PadClass(outport, latency=args.latency,
+        M = PadClass(outport,
+            latency=args.latency,
             notes=args.notes)
         fcn = bind_callback(M.update)
         start_devices_with_callback(fcn)
@@ -26,6 +27,6 @@ if __name__ == '__main__':
         help='how often to check for note updates (in secs)')
     parser.add_argument('--notes', type=str, default='all',
         choices=['all'] + all_key_opts,
-        help='choose key name (lowercase is minor), or "all"') # 'rmsprop'
+        help='choose key name (lowercase is minor), or "all"')
     args = parser.parse_args()
     play(args)
