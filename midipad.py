@@ -192,15 +192,31 @@ class DefaultMidiPad(MidiPad):
 
 all_notes = xrange(21, 109)
 Cmaj = [60, 62, 64, 65, 67, 69, 71, 72]
+Cmin = [60, 62, 63, 65, 67, 69, 70, 71]
+key_opts = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+all_key_opts = key_opts + [x.lower() for x in key_opts]
+
+def get_notes_from_key(key):
+    offset = key_opts.index(key.upper())
+    if key.islower():
+        return [x+offset for x in Cmin]
+    return [x+offset for x in Cmaj]
 
 class DefaultMidiPad(MidiPad):
-    def touch_events(self, touch, note_opts=all_notes):
+    def __init__(self, outport, notes='all', latency=0.1, n_fingers_to_pause=5):
+        MidiPad.__init__(self, outport, latency, n_fingers_to_pause)
+        if notes == 'all':
+            self.note_opts = all_notes
+        else:
+            self.note_opts = get_notes_from_key(notes)
+
+    def touch_events(self, touch):
         """
         maps x position to pitch, y position to velocity
         """
         events = []
         for (x,y),(a,b,c) in zip(touch.positions, touch.ellipses):
-            event = MidiNote(note=discretize(x, note_opts),
+            event = MidiNote(note=discretize(x, self.note_opts),
                         velocity=discretize(y, xrange(0, 128)),
                         identifier=a)
             events.append(event)
