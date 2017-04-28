@@ -3,7 +3,7 @@
 
 0. Install requirements with `pip install -r requirements.txt`
 1. Open up GarageBand or Logic with a Software Instrument track
-2. Run `python play.py` and drag your finger along the trackpad
+2. `cd miditouchpad` and then run `python play.py` and drag your finger along the trackpad
 
 ## Options
 
