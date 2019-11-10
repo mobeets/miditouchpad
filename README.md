@@ -1,3 +1,4 @@
+__What this does__: Lets you use your mac's trackpad as a midi controller.
 
 ## Getting started
 
